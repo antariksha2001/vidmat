@@ -2,7 +2,7 @@ import streamlit as st
 import cv2
 import numpy as np
 
-# Function to initialize camera based on user selection
+# Function to initialize the camera based on user selection
 def init_camera(source, camera_url=None):
     if source == "Local Camera (Webcam)":
         return cv2.VideoCapture(0)
