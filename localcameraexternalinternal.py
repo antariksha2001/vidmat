@@ -11,6 +11,7 @@ RTC_CONFIGURATION = RTCConfiguration({
 class VideoProcessor(VideoTransformerBase):
     def __init__(self):
         self.apply_processing = False
+        # Load the face detection model
         self.face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + "haarcascade_frontalface_default.xml")
 
     def toggle_processing(self):
@@ -27,12 +28,14 @@ class VideoProcessor(VideoTransformerBase):
             gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
             faces = self.face_cascade.detectMultiScale(gray, scaleFactor=1.1, minNeighbors=5, minSize=(30, 30))
             
-            # Blur each face found in the frame
-            for (x, y, w, h) in faces:
-                face = img[y:y+h, x:x+w]
-                face = cv2.GaussianBlur(face, (99, 99), 30)
-                img[y:y+h, x:x+w] = face
-        
+            if len(faces) > 0:
+                for (x, y, w, h) in faces:
+                    face = img[y:y+h, x:x+w]
+                    face = cv2.GaussianBlur(face, (99, 99), 30)
+                    img[y:y+h, x:x+w] = face
+            else:
+                st.write("No faces detected.")
+
         return img
 
 # Streamlit UI
@@ -43,7 +46,7 @@ processing_toggle = st.checkbox("Apply Face Blur Processing")
 
 # Initialize the WebRTC streamer
 webrtc_ctx = webrtc_streamer(
-    key="example",
+    key="face-blur",  # Unique key for this streamer instance
     video_processor_factory=VideoProcessor,
     rtc_configuration=RTC_CONFIGURATION,
     media_stream_constraints={"video": True, "audio": False},
@@ -52,7 +55,4 @@ webrtc_ctx = webrtc_streamer(
 
 # Apply processing if the checkbox is selected
 if webrtc_ctx.video_processor:
-    if processing_toggle:
-        webrtc_ctx.video_processor.toggle_processing()
-
-# Note: WebRTC works on both desktop and mobile browsers.
+    webrtc_ctx.video_processor.apply_processing = processing_toggle
